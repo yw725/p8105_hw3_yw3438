@@ -1,0 +1,96 @@
+---
+title: "p8105_hw3_yw3438"
+author: "Yuning Wang"
+date: "10/3/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(dplyr)
+library(ggridges)
+library(viridis)
+```
+
+
+## Problem 1
+
+```{r message=FALSE}
+# Read the data
+library(p8105.datasets)
+data("instacart")
+```
+
+**To find out the number of aisles and which aisle is the most items ordered from.**
+```{r message=FALSE}
+aisles_from = instacart %>% 
+  group_by(aisle) %>% 
+  summarize(n_aisle = n()) %>% 
+  arrange(desc(n_aisle))
+#Find out how many aisles are there
+n_aisles = nrow(aisles_from)
+```
+It can be concluded that the number of aisles is `r n_aisles` and the most items are ordered from `r pull(aisles_from, aisle)[1]` 
+
+**To draw the plot showing the number of items ordered in each aisle**
+
+```{r  fig.height = 5}
+aisle_plot = aisles_from %>% 
+  filter(n_aisle > 10000) %>% 
+  ggplot(aes(x = n_aisle, y = aisle)) +
+  geom_point(aes(color = aisle), alpha = .5) +
+  labs(
+    title = "Aisle plot",
+    x = "Number of items",
+    y = "Names of aisles",
+    caption = "Data from the instacart") +
+  theme(legend.position = "bottom")
+  viridis::scale_color_viridis(
+    name = "Aisle",
+    discrete = TRUE
+  )
+aisle_plot
+```
+
+**To make a table showing the three most popular items in specific aisles**
+
+```{r}
+three_pop_table = instacart %>% 
+  filter(aisle %in% 
+           c("baking ingredients", "dog food care", "packaged vegetables fruits")
+         ) %>% 
+  group_by(product_name, aisle) %>% 
+  summarize(n_product_name = n()) %>% 
+  group_by(aisle) %>% 
+  filter(min_rank(desc(n_product_name)) < 4) %>% 
+  arrange(aisle)
+three_pop_table
+```
+
+
+**To make a table about PLA and CIC**
+
+```{r}
+pla_cic = instacart %>% 
+  filter(product_name %in% c("Pink Lady Apple", "Coffee Ice Cream")) %>% 
+  group_by(product_name, order_dow) %>% 
+  summarize(
+    mean_order_of_day = mean(order_hour_of_day)
+  ) %>% 
+  mutate(order_dow = recode(order_dow, 
+    "0" = "Sunday", "1" = "Monday", "2" = "Tuesday", "3" = "Wednesday",
+    "4" = "Thursday", "5" = "Friday", "6" = "Saturday")) %>% 
+  pivot_wider(
+    names_from = "order_dow",
+    values_from = "mean_order_of_day"
+  )
+pla_cic
+```
+
+
+## Problem 2
+
+
+
