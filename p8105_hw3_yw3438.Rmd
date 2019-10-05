@@ -12,6 +12,7 @@ library(tidyverse)
 library(dplyr)
 library(ggridges)
 library(viridis)
+library(patchwork)
 ```
 
 
@@ -36,44 +37,46 @@ It can be concluded that the number of aisles is `r n_aisles` and the most items
 
 **To draw the plot showing the number of items ordered in each aisle**
 
-```{r  fig.height = 5}
-aisle_plot = aisles_from %>% 
+```{r fig.width = 15, fig.height = 12}
+aisles_from %>% 
   filter(n_aisle > 10000) %>% 
-  ggplot(aes(x = n_aisle, y = aisle)) +
-  geom_point(aes(color = aisle), alpha = .5) +
+  ggplot(aes(x = reorder(aisle, n_aisle), y = n_aisle, fill = aisle)) +
+  geom_col() + 
   labs(
     title = "Aisle plot",
     x = "Number of items",
     y = "Names of aisles",
     caption = "Data from the instacart") +
-  theme(legend.position = "bottom")
+  theme_bw() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
   viridis::scale_color_viridis(
     name = "Aisle",
     discrete = TRUE
   )
-aisle_plot
 ```
 
 **To make a table showing the three most popular items in specific aisles**
 
 ```{r}
-three_pop_table = instacart %>% 
+instacart %>% 
   filter(aisle %in% 
            c("baking ingredients", "dog food care", "packaged vegetables fruits")
          ) %>% 
-  group_by(product_name, aisle) %>% 
+  group_by(aisle, product_name) %>% 
   summarize(n_product_name = n()) %>% 
   group_by(aisle) %>% 
   filter(min_rank(desc(n_product_name)) < 4) %>% 
-  arrange(aisle)
-three_pop_table
+  arrange(aisle) %>%
+  knitr::kable()
+
 ```
 
 
 **To make a table about PLA and CIC**
 
 ```{r}
-pla_cic = instacart %>% 
+instacart %>% 
   filter(product_name %in% c("Pink Lady Apple", "Coffee Ice Cream")) %>% 
   group_by(product_name, order_dow) %>% 
   summarize(
@@ -85,12 +88,184 @@ pla_cic = instacart %>%
   pivot_wider(
     names_from = "order_dow",
     values_from = "mean_order_of_day"
-  )
-pla_cic
+  ) %>% 
+  knitr::kable(digits = 2)
 ```
 
 
 ## Problem 2
 
+```{r}
+library(p8105.datasets)
+data("brfss_smart2010")
+```
+read and clean the dataset
+```{r}
+brfss_smart2010 = brfss_smart2010 %>% 
+  janitor::clean_names() %>% 
+  filter(topic == "Overall Health") %>% 
+  mutate(response = factor(response,
+                  levels = c("Poor", "Fair",
+                             "Good", "Very good","Excellent"),
+                  ordered = is.ordered(response)
+                  ))%>% 
+  drop_na(response) %>%
+  rename(state_name_abb = locationabbr) %>% 
+  arrange(response)
+```
+
+1)To find out states at 7 or more locations in 2002 
+
+```{r}
+state_2002 = brfss_smart2010 %>% 
+  filter(year == 2002) %>% 
+  group_by(state_name_abb) %>% 
+  summarize(n_state = n()) %>% 
+  filter(n_state >= 7) 
+```
+In 2002, the abbreviation of the states that were observed at 7 or more locations were `r pull(state_2002, state_name_abb)`.
+
+
+2)To find out states at 7 or more locations in 2010
+
+```{r}
+state_2010 = brfss_smart2010 %>% 
+  filter(year == 2010) %>% 
+  group_by(state_name_abb) %>% 
+  summarize(n_state = n()) %>% 
+  filter(n_state >= 7)
+```
+In 2010, the abbreviation of the states that were observed at 7 or more locations were `r pull(state_2010, state_name_abb)`.
+
+
+3)
+To construct the dataset
+```{r}
+excellent_form = brfss_smart2010 %>% 
+  filter(response == "Excellent") %>% 
+  group_by(state_name_abb, year) %>% 
+  summarize(ave_data_value = mean(data_value))
+```
+To make a "spaghetti" plot of the average value over time within a state
+```{r fig.width=15, fig.height=13}
+ave_plot = excellent_form %>% 
+  ggplot(aes(x = year, y = ave_data_value, , color = state_name_abb)) +
+  geom_line() +
+  labs(
+    title = "Spaghetti Plot",
+    x = "Year",
+    y = "Average of the data value",
+    caption = "Data from the BRFSS"
+  ) + 
+  theme_classic() +
+  theme(legend.position = "bottom") +
+  viridis::scale_color_viridis(
+    name = "Location", 
+    discrete = TRUE
+  )
+ave_plot
+```
+
+4)
+
+```{r fig.width = 15, fig.height=15}
+#Draw the plot of 2006
+data_value_06 = brfss_smart2010 %>% 
+  filter(year == "2006" & state_name_abb == "NY") %>% 
+  select(data_value, response, locationdesc) %>% 
+  ggplot(aes(x = locationdesc, y = data_value, 
+             group = response, color = response)) +
+  geom_point(alpha = .5) +
+  geom_line() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(
+    x = "Locations in NY",
+    y = "Data Value",
+    title = "Distribution of 'data_value' in NY in 2006"
+  ) +
+  viridis::scale_color_viridis(
+    name = "Location", 
+    discrete = TRUE
+  )
+
+
+#Draw the plot of 2010
+data_value_10 = brfss_smart2010 %>% 
+  filter(year == "2010" & state_name_abb == "NY") %>% 
+  select(data_value, response, locationdesc) %>% 
+  ggplot(aes(x = locationdesc, y = data_value, 
+             group = response, color = response)) +
+  geom_point(alpha = .5) +
+  geom_line() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(
+    x = "Locations in NY",
+    y = "Data Value",
+    title = "Distribution of 'data_value' in NY in 2010"
+  ) +
+  viridis::scale_color_viridis(
+    name = "Location", 
+    discrete = TRUE
+  )
+
+# Draw a two-panel plot
+data_value_06 / data_value_10
+```
+
+
+
+## Problem 3
+
+```{r message=FALSE}
+accel_data = read_csv("./accel_data.csv") %>% 
+  mutate(
+    weekday_weekend = case_when(day == "Monday" ~ "weekday",
+                             day == "Tuesday" ~ "weekday",
+                             day == "Wednesday" ~ "weekday", 
+                             day == "Thursday" ~ "weekday", 
+                             day == "Friday" ~ "weekday",
+                             day == "Saturday" ~ "weekend",
+                             day == "Sunday"~ "weekend"),
+    week = as.integer(week),
+    day_id = as.integer(day_id)) %>%
+  select(1:3, weekday_weekend, everything())
+```
+After reading and cleaning the data, it can be discovered that the new dataset 'accel_data' has `r ncol(accel_data)` variables and `r nrow(accel_data)` observations. The variable class of all 'activity.n' variables is `r class(pull(accel_data, activity.1))`. The class of variable 'day' and 'weekday_weekend' is `r class(pull(accel_data, day))` while the class of variable 'week' and 'day_id' is `r class(pull(accel_data, week))`. 
+
+
+```{r}
+total_accel_data = accel_data %>% 
+  mutate(
+    total = rowSums(accel_data[,5:1444], na.rm = FALSE)
+    ) %>% 
+  select(1:4, total) %>% 
+  group_by(week) %>% 
+  arrange(week, total)
+
+knitr::kable(total_accel_data)
+```
+
+The single-panel plot of the 24-hour activity time courses for each day is like:
+
+```{r}
+total_accel_data %>% 
+  ggplot(aes(x = week, y = total, 
+             group = day, color = day)) +
+  geom_point(alpha = .5) +
+  geom_line() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(
+    x = "Week",
+    y = "24-hour Activity Time Courses",
+    title = "24-hour Activity Time Courses Plot"
+  ) +
+  viridis::scale_color_viridis(
+    name = "Location", 
+    discrete = TRUE
+  )
+```
 
 
