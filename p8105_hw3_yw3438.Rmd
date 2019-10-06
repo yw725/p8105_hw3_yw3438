@@ -23,21 +23,23 @@ library(patchwork)
 library(p8105.datasets)
 data("instacart")
 ```
+The dataset in problem 1 is 'instacart' with a size of "`r nrow(instacart)` * `r ncol(instacart)`". The type of the dataset is "`r typeof(instacart)`". Some of the key varialbes in the data include "`r names(instacart %>% select(order_dow:aisle))[1]`" whose observations represent the day of the week on which the order was placed, "`r names(instacart %>% select(order_dow:aisle))[4]`" whose observations show the names of the products, "`r names(instacart %>% select(order_dow:aisle))[5]`" whose observations are aisle identifier, and "`r names(instacart %>% select(order_dow:aisle))[7]`" whose observations are the names of the aisles.
 
-**To find out the number of aisles and which aisle is the most items ordered from.**
+
 ```{r message=FALSE}
+# group by aisle and find out the rank of them
 aisles_from = instacart %>% 
   group_by(aisle) %>% 
   summarize(n_aisle = n()) %>% 
   arrange(desc(n_aisle))
-#Find out how many aisles are there
+# Find out how many aisles are there
 n_aisles = nrow(aisles_from)
 ```
-It can be concluded that the number of aisles is `r n_aisles` and the most items are ordered from `r pull(aisles_from, aisle)[1]` 
+ (1) It can be discovered that there are `r n_aisles` aisles in the data and the most items are ordered from `r pull(aisles_from, aisle)[1]`. The result shows that people are holding healthy diet and are concerned about having enough vegetalbes because fresh vegetables are the aisle that most items are ordered from.
 
-**To draw the plot showing the number of items ordered in each aisle**
 
 ```{r fig.width = 15, fig.height = 12}
+# Draw the plot of aisles
 aisles_from %>% 
   filter(n_aisle > 10000) %>% 
   ggplot(aes(x = reorder(aisle, n_aisle), y = n_aisle, fill = aisle)) +
@@ -56,10 +58,13 @@ aisles_from %>%
   )
 ```
 
-**To make a table showing the three most popular items in specific aisles**
+ (2) It can be discovered from the plot that with number of aisles getting higher, the kind of food is getting healthier with lower calories and more related to cooking. This plot can be used to find out the kind of food that people are most tend to buy online and combine them together to stimulate profits.
+
+
 
 ```{r}
-instacart %>% 
+# Find out the 3 most popular items in certain aisles
+three_pop_data = instacart %>% 
   filter(aisle %in% 
            c("baking ingredients", "dog food care", "packaged vegetables fruits")
          ) %>% 
@@ -67,16 +72,20 @@ instacart %>%
   summarize(n_product_name = n()) %>% 
   group_by(aisle) %>% 
   filter(min_rank(desc(n_product_name)) < 4) %>% 
-  arrange(aisle) %>%
-  knitr::kable()
+  arrange(aisle)
 
+# Create a readable table
+knitr::kable(three_pop_data)
 ```
 
+ (3) The table is a `r nrow(three_pop_data)` * `r ncol(three_pop_data)` containing `r nrow(three_pop_data)` rows and `r ncol(three_pop_data)` columns. The main varialbes in the data include "`r names(three_pop_data)[1]`" showing the name of the asile, "`r names(three_pop_data)[2]`" showing the specific name of the three most popular items in the aisle and "`r names(three_pop_data)[3]`" showing the number of times each item is ordered.
+     From the table, it can be discovered that packaged vegetables fruits are ordered much more than baking ingredients and dog food care. Organic foods are welcomed by customers.
 
-**To make a table about PLA and CIC**
+
 
 ```{r}
-instacart %>% 
+# Find the mean hour of the day which PLA & CIC are ordered on each day of week
+pla_cic_data = instacart %>% 
   filter(product_name %in% c("Pink Lady Apple", "Coffee Ice Cream")) %>% 
   group_by(product_name, order_dow) %>% 
   summarize(
@@ -88,9 +97,16 @@ instacart %>%
   pivot_wider(
     names_from = "order_dow",
     values_from = "mean_order_of_day"
-  ) %>% 
-  knitr::kable(digits = 2)
+  )
+# Make a readable table
+knitr::kable(pla_cic_data, digits = 2)
 ```
+
+ (4) The table is a `r nrow(pla_cic_data)` * `r ncol(pla_cic_data)` containing `r nrow(pla_cic_data)` rows and `r ncol(pla_cic_data)` columns.
+The key variables included in the table are "`r names(pla_cic_data)[1]`" that describes the product names, "`r names(pla_cic_data)[2]`",  "`r names(pla_cic_data)[3]`",  "`r names(pla_cic_data)[4]`",  "`r names(pla_cic_data)[5]`",  "`r names(pla_cic_data)[6]`",   "`r names(pla_cic_data)[7]`" and  "`r names(pla_cic_data)[8]`", which contain the mean order of the two products of that specific day.
+    This table shows the orders of the two products on each day of the week, which is helpful for sellers to improve profits by choosing proper time to make discounts.
+
+
 
 
 ## Problem 2
@@ -114,40 +130,54 @@ brfss_smart2010 = brfss_smart2010 %>%
   arrange(response)
 ```
 
-1)To find out states at 7 or more locations in 2002 
+(1) To find out states at 7 or more locations in 2002, we firstly make a dataset include the states that were observed at 7 or more locations in 2002.
 
 ```{r}
+# Create a dataset about the requirements in 2002
 state_2002 = brfss_smart2010 %>% 
   filter(year == 2002) %>% 
   group_by(state_name_abb) %>% 
   summarize(n_state = n()) %>% 
   filter(n_state >= 7) 
 ```
+
 In 2002, the abbreviation of the states that were observed at 7 or more locations were `r pull(state_2002, state_name_abb)`.
 
+This shows the situation of topic "Overall Health" and its distribution in 2002.
 
-2)To find out states at 7 or more locations in 2010
+
+
+
+To find out states at 7 or more locations in 2010, we firstly make a dataset include the states that were observed at 7 or more locations in 2010.
 
 ```{r}
+# Create a dataset about the requirements in 2010
 state_2010 = brfss_smart2010 %>% 
   filter(year == 2010) %>% 
   group_by(state_name_abb) %>% 
   summarize(n_state = n()) %>% 
   filter(n_state >= 7)
 ```
+
 In 2010, the abbreviation of the states that were observed at 7 or more locations were `r pull(state_2010, state_name_abb)`.
 
+This shows the situation of topic "Overall Health" and its distribution in 2010.
 
-3)
-To construct the dataset
+
+(2) To draw the plot of the average value of "Excellent" response over time within a state, we firstly need to create a dataset limited to "Excellent" response.
+
 ```{r}
+# Create a dataset contains response of only "Excellent".
 excellent_form = brfss_smart2010 %>% 
   filter(response == "Excellent") %>% 
   group_by(state_name_abb, year) %>% 
   summarize(ave_data_value = mean(data_value))
 ```
-To make a "spaghetti" plot of the average value over time within a state
+
+Secondly, we need to use the dataset to make a "spaghetti" plot of the average value over time within a state
+
 ```{r fig.width=15, fig.height=13}
+# Draw the plot
 ave_plot = excellent_form %>% 
   ggplot(aes(x = year, y = ave_data_value, , color = state_name_abb)) +
   geom_line() +
@@ -166,7 +196,12 @@ ave_plot = excellent_form %>%
 ave_plot
 ```
 
-4)
+This is a line plot that shows the the average value over time within states whose response is "Excellent". The x-axis represents the "year" and the y-axis show the value of the mean of data value. The lines here represent the change in average of data value in specific states from 2002 to 2010. 
+
+The line plot directly shows the trends of the mean of data value in each states over the period because of clear lines. Considering the large amount of data we have in this dataset, compared with lots of points that may cause confusion, line plot is a better choice to show the trends.
+
+
+(3) To make a two-panel plot showing the distribution of "data_value" for responses of years 2006 and 2010, we need to draw the plots of 2006 and 2010 firstly and then patchwork them.
 
 ```{r fig.width = 15, fig.height=15}
 #Draw the plot of 2006
@@ -214,6 +249,8 @@ data_value_10 = brfss_smart2010 %>%
 data_value_06 / data_value_10
 ```
 
+The two-panel plot shows the distribution of "data_value" for responses among locations in NY State of years 2006 and 2010, with y-axis representing data value and x-axis showing the locations in NY State. The line plot with value points shows the specific data value and the differences in different locations in 2006 and 2010. The plot can represent the general health conditions of people in specific districts and the difference of health conditions between poeple from different districts in 2006 and 2010.
+
 
 
 ## Problem 3
@@ -236,6 +273,7 @@ After reading and cleaning the data, it can be discovered that the new dataset '
 
 
 ```{r}
+# Create a dataset containing the total activity variable for each day
 total_accel_data = accel_data %>% 
   mutate(
     total = rowSums(accel_data[,5:1444], na.rm = FALSE)
@@ -243,9 +281,13 @@ total_accel_data = accel_data %>%
   select(1:4, total) %>% 
   group_by(week) %>% 
   arrange(week, total)
-
+# Show in table
 knitr::kable(total_accel_data)
 ```
+
+The table showing above can reflect the total activity for each day. In this table, the total value is ranked from low to high in each week. From the plot, it can be discovered that in the first weeks, the total activity is lower on the beginning of the week, like Monday. In the last week, the total activity is quite low on Saturday.
+
+
 
 The single-panel plot of the 24-hour activity time courses for each day is like:
 
@@ -263,9 +305,10 @@ total_accel_data %>%
     title = "24-hour Activity Time Courses Plot"
   ) +
   viridis::scale_color_viridis(
-    name = "Location", 
+    name = "Day", 
     discrete = TRUE
   )
 ```
 
+From the plot, it can be discovered that the patient's 24-hour activity time courses on Monday increased from week 1 to week 3 and dropped from week 4 to week 5, while Tuesday, Wednesday, Thursday almost remained the same from week 1 to week 5 and increased slightly. The patient's 24-hour activity time courses of Saturday and Sunday all dropped from week 2 to week 5, while Saturday's increased a little from week 1 to week 2 and Sunday's remained dropping.
 
