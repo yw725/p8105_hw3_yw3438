@@ -204,51 +204,31 @@ The line plot directly shows the trends of the mean of data value in each states
 (3) To make a two-panel plot showing the distribution of "data_value" for responses of years 2006 and 2010, we need to draw the plots of 2006 and 2010 firstly and then patchwork them.
 
 ```{r fig.width = 15, fig.height=15}
-#Draw the plot of 2006
+#Draw the plot of 2006 and 2010
 data_value_06 = brfss_smart2010 %>% 
-  filter(year == "2006" & state_name_abb == "NY") %>% 
-  select(data_value, response, locationdesc) %>% 
-  ggplot(aes(x = locationdesc, y = data_value, 
-             group = response, color = response)) +
+  filter(year %in% c("2006", "2010"), state_name_abb == "NY") %>% 
+  select(data_value, response, locationdesc, year) %>% 
+  ggplot(aes(x = response, y = data_value, 
+             group = locationdesc, color = locationdesc)) +
   geom_point(alpha = .5) +
   geom_line() +
   theme_bw() +
   theme(legend.position = "bottom") +
   labs(
-    x = "Locations in NY",
+    x = "Response",
     y = "Data Value",
-    title = "Distribution of 'data_value' in NY in 2006"
+    title = "Distribution of 'data_value' in NY in 2006 and 2010"
   ) +
   viridis::scale_color_viridis(
     name = "Location", 
     discrete = TRUE
-  )
-
-
-#Draw the plot of 2010
-data_value_10 = brfss_smart2010 %>% 
-  filter(year == "2010" & state_name_abb == "NY") %>% 
-  select(data_value, response, locationdesc) %>% 
-  ggplot(aes(x = response, y = data_value, fill = locationdesc)) +
-  geom_col() +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(
-    x = "Locations in NY",
-    y = "Data Value",
-    title = "Distribution of 'data_value' in NY in 2010"
   ) +
-  viridis::scale_color_viridis(
-    name = "Location", 
-    discrete = TRUE
-  )
+  facet_grid(~year)
 
-# Draw a two-panel plot
-data_value_06 / data_value_10
+
 ```
 
-The two-panel plot shows the distribution of "data_value" for responses among locations in NY State of years 2006 and 2010, with y-axis representing data value and x-axis showing the locations in NY State. The line plot with value points shows the specific data value and the differences in different locations in 2006 and 2010. The plot can represent the general health conditions of people in specific districts and the difference of health conditions between poeple from different districts in 2006 and 2010.
+The two-panel plot shows the distribution of "data_value" for responses among locations in NY State of years 2006 and 2010, with y-axis representing data value and x-axis showing the response. The line plot with value points shows the specific data value and the differences in different locations in 2006 and 2010. The plot can represent the general health conditions of people in specific districts and the difference of health conditions between poeple from different districts in 2006 and 2010.
 
 
 
