@@ -205,7 +205,7 @@ The line plot directly shows the trends of the mean of data value in each states
 
 ```{r fig.width = 15, fig.height=15}
 #Draw the plot of 2006 and 2010
-data_value_06 = brfss_smart2010 %>% 
+brfss_smart2010 %>% 
   filter(year %in% c("2006", "2010"), state_name_abb == "NY") %>% 
   select(data_value, response, locationdesc, year) %>% 
   ggplot(aes(x = response, y = data_value, 
@@ -224,7 +224,6 @@ data_value_06 = brfss_smart2010 %>%
     discrete = TRUE
   ) +
   facet_grid(~year)
-
 
 ```
 
@@ -262,9 +261,26 @@ total_accel_data = accel_data %>%
   arrange(week, total)
 # Show in table
 knitr::kable(total_accel_data)
+# Create a plot to figure out any trends in the table
+total_accel_data %>% 
+  ggplot(aes(x = day_id, y = total,
+             color = week)) +
+  geom_point(alpha = .5) +
+  geom_line() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(
+    x = "Day ID",
+    y = "Total activity value",
+    title = "Distribution of total activity for each day in every week"
+  ) +
+  viridis::scale_color_viridis(
+    name = "Week", 
+    discrete = FALSE
+  )
 ```
 
-The table showing above can reflect the total activity for each day. In this table, the total value is ranked from low to high in each week. From the plot, it can be discovered that in the first weeks, the total activity is lower on the beginning of the week, like Monday. In the last two week, the total activity is quite low on Saturday.
+The table showing above can reflect the total activity for each day. In this table, the total value is ranked from low to high in each week. From the plot, it can be discovered that in the first weeks, the total activity is lower on the beginning of the week, like Monday. In the last two week, the total activity is quite low on Saturday. From the plot showing the distribution of total activity for each day, it can be discovered that there were great changes in the total value and it varied greatly during each week.
 
 
 
@@ -293,5 +309,5 @@ accel_data %>%
   )
 ```
 
-
+From the plot , it can be discovered that the 24-hour activity time courses were generally small on Saturday and Monday, while that value of Friday was high on Friday.
 
