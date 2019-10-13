@@ -235,6 +235,7 @@ The two-panel plot shows the distribution of "data_value" for responses among lo
 
 ```{r message=FALSE}
 accel_data = read_csv("./accel_data.csv") %>% 
+  janitor::clean_names() %>% 
   mutate(
     weekday_weekend = case_when(day == "Monday" ~ "weekday",
                              day == "Tuesday" ~ "weekday",
@@ -247,7 +248,7 @@ accel_data = read_csv("./accel_data.csv") %>%
     day_id = as.integer(day_id)) %>%
   select(1:3, weekday_weekend, everything())
 ```
-After reading and cleaning the data, it can be discovered that the new dataset 'accel_data' has `r ncol(accel_data)` variables and `r nrow(accel_data)` observations. The variable class of all 'activity.n' variables is `r class(pull(accel_data, activity.1))`. The class of variable 'day' and 'weekday_weekend' is `r class(pull(accel_data, day))` while the class of variable 'week' and 'day_id' is `r class(pull(accel_data, week))`. 
+After reading and cleaning the data, it can be discovered that the new dataset 'accel_data' has `r ncol(accel_data)` variables and `r nrow(accel_data)` observations. The variable class of all 'activity.n' variables is `r class(pull(accel_data, activity_1))`. The class of variable 'day' and 'weekday_weekend' is `r class(pull(accel_data, day))` while the class of variable 'week' and 'day_id' is `r class(pull(accel_data, week))`. 
 
 
 ```{r}
@@ -289,17 +290,22 @@ The single-panel plot of the 24-hour activity time courses for each day is like:
 ```{r}
 accel_data %>% 
   pivot_longer(
-    activity.1:activity.1440,
+    activity_1:activity_1440,
     names_to = "activity",
+    names_prefix = "activity_",
     values_to = "act_data"
     ) %>% 
+  mutate(
+    activity = factor(activity, level = c(1:1440), ordered = T)
+  ) %>% 
+  arrange(week, day_id) %>% 
   ggplot(aes(x = activity, y = act_data, 
              group = day, color = day)) +
   geom_line() +
   theme_bw() +
   theme(legend.position = "bottom") +
   labs(
-    x = "Week",
+    x = "Activity",
     y = "24-hour Activity Time Courses",
     title = "24-hour Activity Time Courses Plot"
   ) +
@@ -309,5 +315,7 @@ accel_data %>%
   )
 ```
 
-From the plot , it can be discovered that the 24-hour activity time courses were generally small on Saturday and Monday, while that value of Friday was high on Friday.
+From the plot , it can be discovered that the 24-hour activity time courses were generally small on Saturday and Monday, while that value of Friday was high on Friday. The total value is low at midnight and high at night.
+
+
 
